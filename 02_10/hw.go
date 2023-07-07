@@ -149,26 +149,14 @@ package main
 // Implement a fibonacci function that returns a function (a closure) 
 // that returns successive fibonacci numbers (0, 1, 1, 2, 3, 5, ...).
 import "fmt"
-// fibonacci is a function that returns
-// a function that returns an int.
+
 func fibonacci() func() int {
-	iPrev := 0
-	iNow := 0
-	var tmp int
+	iPrev, iNow := 0, 1
+	var outp int
 	return func() int {
-		if iNow == 0 {
-			iPrev = 0
-			iNow = 1
-			return iPrev
-		} else if iNow == 1 && iPrev ==0 {
-			iPrev = 1
-			iNow = 1
-			return iPrev
-		}
-		tmp = iPrev
-		iPrev = iNow
-		iNow += tmp
-		return iPrev
+		outp = iPrev
+		iPrev, iNow = iNow, iPrev + iNow
+		return outp
 	}
 }
 func main() {
