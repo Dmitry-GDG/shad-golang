@@ -1,7 +1,7 @@
 # Курс по Го в ШАД
 https://gitlab.com/slon/shad-go
 
-# Решенные задачи отмечаю плюсиками в hometasks.txt
+# Решенные задачи отмечаю плюсиками в hometasks.md
 
 
 

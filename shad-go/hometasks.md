@@ -1,17 +1,20 @@
-2. Проверьте, что ваше решение проходит тесты локально.
+### ПРОВЕРКИ:
 
   ```shell
-  # Из корня репозитория.
+  # Из папки программы:
+  cd ..
+  # Из корня репозитория:
+  go run ./sum/main.go
+  # Форматирование файлов по стандартам Go:
+  go fmt ./sum/main.go
+  # Проверка и импорт недостающих пакетов:
+  go goimports ./sum/main.go // go goimports -w ./sum/main.go
+  # Проверьте, что код проходит линтер:
+  golangci-lint run ./sum/...
+  # Проверьте, что ваше решение проходит тесты локально:
   go test ./sum/...
   ```
-   
-3. Проверьте, что код проходит линтер. Линтер нужно установить [по инструкции](https://github.com/golangci/golangci-lint#binary).
-
-  ```shell
-  # Из корня репозитория.
-  golangci-lint run ./sum/...
-  ```
-
+### TASKS
 
 - group:    Hello World
   start:    11-02-2023 18:00
@@ -23,7 +26,7 @@
       score: 100
     + task: wordcount
       score: 100
-    - task: urlfetch
+    + task: urlfetch
       score: 100
     - task: fetchall
       score: 100
