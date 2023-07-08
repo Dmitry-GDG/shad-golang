@@ -8,7 +8,7 @@
   # Форматирование файлов по стандартам Go:
   go fmt ./sum/main.go
   # Проверка и импорт недостающих пакетов:
-  go goimports ./sum/main.go // go goimports -w ./sum/main.go
+  goimports ./sum/main.go // goimports -w ./sum/main.go
   # Проверьте, что код проходит линтер:
   golangci-lint run ./sum/...
   # Проверьте, что ваше решение проходит тесты локально:
@@ -29,7 +29,7 @@
       score: 100
     - task: ~~[urlfetch](./urlfetch/README.md)~~
       score: 100
-    - task: [fetchall](./fetchall/README.md)
+    - task: ~~[fetchall]~~(./fetchall/README.md)
       score: 100
 
 - group:    Basics
