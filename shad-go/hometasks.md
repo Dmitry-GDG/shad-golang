@@ -20,189 +20,190 @@
   start:    11-02-2023 18:00
   deadline: 21-02-2023 23:59
   tasks:
-    + task: sum
+
+    - task: ~~[sum](./sum/README.md)~~
       score: 100
-    + task: tour0
+    - task: ~~[tour0](./tour0/README.md)~~
       score: 100
-    + task: wordcount
+    - task: ~~[wordcount](./wordcount/README.md)~~
       score: 100
-    + task: urlfetch
+    - task: ~~[urlfetch](./urlfetch/README.md)~~
       score: 100
-    - task: fetchall
+    - task: [fetchall](./fetchall/README.md)
       score: 100
 
 - group:    Basics
   start:    18-02-2023 16:00
   deadline: 28-02-2023 23:59
   tasks:
-    - task: hotelbusiness
+    - task: [hotelbusiness](./hotelbusiness/README.md)
       score: 100
-    - task: hogwarts
+    - task: [hogwarts](./hogwarts/README.md)
       score: 100
-    - task: utf8
+    - task: [utf8](./utf8/README.md)
       score: 100
-    - task: varfmt
+    - task: [varfmt](./varfmt/README.md)
       score: 100
-    - task: speller
+    - task: [speller](./speller/README.md)
       score: 100
-    - task: forth
+    - task: [forth](./forth/README.md)
       score: 100
 
 - group:    Interfaces
   start:    25-02-2023 16:30
   deadline: 07-03-2023 23:59
   tasks:
-    - task: otp
+    - task: [otp](./otp/README.md)
       score: 100
-    - task: lrucache
+    - task: [lrucache](./lrucache/README.md)
       score: 100
-    - task: externalsort
+    - task: [externalsort](./externalsort/README.md)
       score: 100
-    - task: retryupdate
+    - task: [retryupdate](./retryupdate/README.md)
       score: 100
-    - task: ciletters
+    - task: [ciletters](./ciletters/README.md)
       score: 100
 
 - group:    Goroutines
   start:    04-03-2023 16:30
   deadline: 14-03-2023 23:59
   tasks:
-    - task: tour1
+    - task: [tour1](./tour1/README.md)
       score: 100
-    - task: once
+    - task: [once](./once/README.md)
       score: 100
-    - task: rwmutex
+    - task: [rwmutex](./rwmutex/README.md)
       score: 100
-    - task: waitgroup
+    - task: [waitgroup](./waitgroup/README.md)
       score: 100
-    - task: cond
+    - task: [cond](./cond/README.md)
       score: 100
-    - task: ratelimit
+    - task: [ratelimit](./ratelimit/README.md)
       score: 100
 
 - group:    "[HW] Gitfame"
   start:    04-03-2023 16:30
   deadline: 19-03-2023 23:59
   tasks:
-   - task: gitfame
+   - task: [gitfame](./gitfame/README.md)
      score: 0
 
 - group:    Testing
   start:    11-03-2023 13:00
   deadline: 21-03-2023 23:59
   tasks:
-    - task: testequal
+    - task: [testequal](./testequal/README.md)
       score: 100
-    - task: fileleak
+    - task: [fileleak](./fileleak/README.md)
       score: 100
-    - task: tabletest
+    - task: [tabletest](./tabletest/README.md)
       score: 100
-    - task: tparallel
+    - task: [tparallel](./tparallel/README.md)
       score: 200
-    - task: iprange
+    - task: [iprange](./iprange/README.md)
       score: 100
 
 - group:    Concurrency with shared memory
   start:    18-03-2023 15:59
   deadline: 29-03-2023 23:59
   tasks:
-    - task: dupcall
+    - task: [dupcall](./dupcall/README.md)
       score: 200
-    - task: keylock
+    - task: [keylock](./keylock/README.md)
       score: 200
-    - task: batcher
+    - task: [batcher](./batcher/README.md)
       score: 200
-    - task: pubsub
+    - task: [pubsub](./pubsub/README.md)
       score: 300
 
 - group:    HTTP
   start:    25-03-2023 16:00
   deadline: 06-04-2023 23:59
   tasks:
-    - task: urlshortener
+    - task: [urlshortener](./urlshortener/README.md)
       score: 100
-    - task: digitalclock
+    - task: [digitalclock](./digitalclock/README.md)
       score: 100
-    - task: middleware
+    - task: [middleware](./middleware/README.md)
       score: 200
-    - task: olympics
+    - task: [olympics](./olympics/README.md)
       score: 200
-    - task: firewall
+    - task: [firewall](./firewall/README.md)
       score: 200
 
 - group:    Generics
   start:    01-04-2023 16:00
   deadline: 11-04-2023 23:59
   tasks:
-    - task: genericsum
+    - task: [genericsum](./genericsum/README.md)
       score: 100
-    - task: treeiter
+    - task: [treeiter](./treeiter/README.md)
       score: 100
-    - task: coverme
+    - task: [coverme](./coverme/README.md)
       score: 300
 
 - group:    SQL
   start:    08-04-2023 16:00
   deadline: 18-04-2023 23:59
   tasks:
-    - task: dao
+    - task: [dao](./dao/README.md)
       score: 100
-    - task: ledger
+    - task: [ledger](./ledger/README.md)
       score: 200
-    - task: shopfront
+    - task: [shopfront](./shopfront/README.md)
       score: 100
-    - task: wscat
+    - task: [wscat](./wscat/README.md)
       score: 200
 
 - group:    Reflect
   start:    15-04-2023 16:00
   deadline: 25-04-2023 23:59
   tasks:
-    - task: reversemap
+    - task: [reversemap](./reversemap/README.md)
       score: 100
-    - task: jsonlist
+    - task: [jsonlist](./jsonlist/README.md)
       score: 100
-    - task: jsonrpc
+    - task: [jsonrpc](./jsonrpc/README.md)
       score: 100
-    - task: structtags
+    - task: [structtags](./structtags/README.md)
       score: 100
 
 - group:    Low level
   start:    22-04-2023 16:00
   deadline: 03-05-2023 23:59
   tasks:
-    - task: illegal
+    - task: [illegal](./illegal/README.md)
       score: 100
-    - task: blowfish
+    - task: [blowfish](./blowfish/README.md)
       score: 100
 
 - group:    "[HW] Dist Build"
   start:    26-04-2023 12:00
   deadline: 29-05-2023 23:59
   tasks:
-    - task: distbuild
+    - task: [distbuild](./distbuild/README.md)
       score: 0
 
 - group:    Analysis
   start:    29-04-2023 18:00
   deadline: 10-05-2023 23:59
   tasks:
-    - task: testifycheck
+    - task: [testifycheck](./testifycheck/README.md)
       score: 200
-    - task: gzep
+    - task: [gzep](./gzep/README.md)
       score: 100
       
 - group:    Bonus
   start:    11-02-2023 18:00
   deadline: 29-05-2023 23:59
   tasks:
-    - task: consistenthash
+    - task: [consistenthash](./consistenthash/README.md)
       score: 200
-    - task: gossip
+    - task: [gossip](./gossip/README.md)
       score: 300
-    - task: smartsched
+    - task: [smartsched](./smartsched/README.md)
       score: 200
       watch:
         - distbuild/pkg/scheduler
-    - task: wasm
+    - task: [wasm](./wasm/README.md)
       score: 300
