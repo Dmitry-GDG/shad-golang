@@ -29,7 +29,7 @@
       score: 100
     - task: ~~[urlfetch](./urlfetch/README.md)~~
       score: 100
-    - task: ~~[fetchall]~~(./fetchall/README.md)
+    - task: ~~[fetchall](./fetchall/README.md)~~
       score: 100
 
 - group:    Basics
