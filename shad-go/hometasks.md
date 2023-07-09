@@ -36,7 +36,7 @@
   start:    18-02-2023 16:00
   deadline: 28-02-2023 23:59
   tasks:
-    - task: [hotelbusiness](./hotelbusiness/README.md)
+    - task: ~~[hotelbusiness](./hotelbusiness/README.md)~~
       score: 100
     - task: [hogwarts](./hogwarts/README.md)
       score: 100
