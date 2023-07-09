@@ -37,7 +37,7 @@ func ComputeLoad(guests []Guest) []Load {
 	outpLoads = append(outpLoads, Load{dateMin, loads[dateMin]})
 	if len(loads) > 1 {
 		for date := dateMin + 1; date <= dateMax; date++ {
-			if loads[date] == loads[date - 1] {
+			if loads[date] == loads[date-1] {
 				continue
 			} else {
 				outpLoads = append(outpLoads, Load{date, loads[date]})
