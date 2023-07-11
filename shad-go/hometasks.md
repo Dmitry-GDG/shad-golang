@@ -38,7 +38,7 @@
   tasks:
     - task: ~~[hotelbusiness](./hotelbusiness/README.md)~~
       score: 100
-    - task: [hogwarts](./hogwarts/README.md)
+    - task: ~~[hogwarts](./hogwarts/README.md)~~
       score: 100
     - task: [utf8](./utf8/README.md)
       score: 100
