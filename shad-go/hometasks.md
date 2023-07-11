@@ -40,7 +40,7 @@
       score: 100
     - task: ~~[hogwarts](./hogwarts/README.md)~~
       score: 100
-    - task: [utf8](./utf8/README.md)
+    - task: ~~[utf8](./utf8/README.md)~~
       score: 100
     - task: [varfmt](./varfmt/README.md)
       score: 100
