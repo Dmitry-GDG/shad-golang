@@ -98,6 +98,29 @@ package main
 // // сколько рун в слове на кирилице:        6
 // // длина после перевода в руны:    6
 
+// //
+// unicode
+// //
+// type rune = int32
+
+// //
+// кодировка utf8
+// //
+// 0xxxxxx								runes 0-127
+// 11xxxxx 10xxxxxx						128-2047
+// 110xxxx 10xxxxxx 10xxxxxx			2048-65535
+// 1110xxx 10xxxxxx 10xxxxxx 10xxxxxx	65536-0x10fff
+
+// //
+// Разница между рунами и байтами
+// //
+import "unicode/utf8"
+func count Runes() {
+	s := "Привет"
+	fmt.Println(len(s)) // "13"
+	fmt.Println(utf8.RuneCountInString(s)) // "9"
+}
+
 // // 
 // utf8
 // //
@@ -119,7 +142,8 @@ package main
 // // 6       в
 // // 8       е
 // // 10      т
-
+//
+//// Декодирование utf8 встроено в язык:
 // import (
 // 	"fmt"
 // )
@@ -137,6 +161,8 @@ package main
 // // 6       'в'     1074
 // // 8       'е'     1077
 // // 10      'т'     1090
+//
+// Некорректный байт превращается в unicode replacement character `\uFFFD`
 
 // // 
 // []byte
