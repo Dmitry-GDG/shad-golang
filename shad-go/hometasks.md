@@ -44,7 +44,7 @@
       score: 100
     - task: ~~[varfmt](./varfmt/README.md)~~
       score: 100
-    - task: [speller](./speller/README.md)
+    - task: ~~[speller](./speller/README.md)~~
       score: 100
     - task: [forth](./forth/README.md)
       score: 100
