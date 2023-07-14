@@ -307,148 +307,151 @@ package main
 // 	fmt.Println(Sprintf("He{2}o{2}o", 0, 1, "ll"))
 // }
 
-//--------------------------------------------
-import "fmt"
-// const (
-// 	// c0 string = "zero"
-// 	// c1 string = "one"
-// 	// c2 string = "two"
-// 	// c3 string = "three"
-// 	// c4 string = "four"
-// 	// c5 string = "five"
-// 	// c6 string = "six"
-// 	// c7 string = "seven"
-// 	// c8 string = "eight"
-// 	// c9 string = "nine"
-// 	// c10 string = "ten"
-// 	// c11 string = "eleven"
-// 	// c12 string = "twelve"
-// 	// c13 string = "thirteen"
-// 	// c14 string = "fourteen"
-// 	// c15 string = "fifteen"
-// 	// c16 string = "sixteen"
-// 	// c17 string = "seventeen"
-// 	// c18 string = "eighteen"
-// 	// c19 string = "nineteen"
+// //--------------------------------------------
+// import "fmt"
+// // const (
+// // 	// c0 string = "zero"
+// // 	// c1 string = "one"
+// // 	// c2 string = "two"
+// // 	// c3 string = "three"
+// // 	// c4 string = "four"
+// // 	// c5 string = "five"
+// // 	// c6 string = "six"
+// // 	// c7 string = "seven"
+// // 	// c8 string = "eight"
+// // 	// c9 string = "nine"
+// // 	// c10 string = "ten"
+// // 	// c11 string = "eleven"
+// // 	// c12 string = "twelve"
+// // 	// c13 string = "thirteen"
+// // 	// c14 string = "fourteen"
+// // 	// c15 string = "fifteen"
+// // 	// c16 string = "sixteen"
+// // 	// c17 string = "seventeen"
+// // 	// c18 string = "eighteen"
+// // 	// c19 string = "nineteen"
 
-// 	c19 [...]string = {"zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen"}
+// // 	c19 [...]string = {"zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen"}
 	
-// 	// c20 string = "twenty"
-// 	// c30 string = "thirty"
-// 	// c40 string = "forty"
-// 	// c50 string = "fifty"
-// 	// c60 string = "sixty"
-// 	// c70 string = "seventy"
-// 	// c80 string = "eighty"
-// 	// c90 string = "ninety"
-// 	// c100 string = "hundred"
+// // 	// c20 string = "twenty"
+// // 	// c30 string = "thirty"
+// // 	// c40 string = "forty"
+// // 	// c50 string = "fifty"
+// // 	// c60 string = "sixty"
+// // 	// c70 string = "seventy"
+// // 	// c80 string = "eighty"
+// // 	// c90 string = "ninety"
+// // 	// c100 string = "hundred"
 	
-// 	c100 := map[int]string {
-// 		2: "twenty"
-// 		3: "thirty"
-// 		4: "forty"
-// 		5: "fifty"
-// 		6: "sixty"
-// 		7: "seventy"
-// 		8: "eighty"
-// 		9: "ninety"
-// 		100: "hundred"
+// // 	c100 := map[int]string {
+// // 		2: "twenty"
+// // 		3: "thirty"
+// // 		4: "forty"
+// // 		5: "fifty"
+// // 		6: "sixty"
+// // 		7: "seventy"
+// // 		8: "eighty"
+// // 		9: "ninety"
+// // 		100: "hundred"
+// // 	}
+// // )
+
+// func convert999(n int64) string {
+// 	c100 := map[int64]string {
+// 		2: "twenty",
+// 		3: "thirty",
+// 		4: "forty",
+// 		5: "fifty",
+// 		6: "sixty",
+// 		7: "seventy",
+// 		8: "eighty",
+// 		9: "ninety",
+// 		100: "hundred",
 // 	}
-// )
 
-func convert999(n int64) string {
-	c100 := map[int64]string {
-		2: "twenty",
-		3: "thirty",
-		4: "forty",
-		5: "fifty",
-		6: "sixty",
-		7: "seventy",
-		8: "eighty",
-		9: "ninety",
-		100: "hundred",
-	}
-
-	c19 := [...]string{"zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen"}
+// 	c19 := [...]string{"zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen"}
 	
 
-	var str string
-	sep := " "
-	nbr := n % 100
-	n /= 100
-	if n > 0 {
-		str += c19[n] + sep + c100[100]
-		// if nbr > 0 {
-		// 	str += sep
-		// }
-	}
-	if nbr < 20 && nbr != 0 {
-		if n > 0 {
-			str += sep
-		}
-		str += c19[nbr]
-	// } else if nbr == 0 && n == 0 {
-	// 	str += c19[0]
-	} else {
-		if n > 0 && nbr % 10 > 0{
-			str += sep
-		}
-		str += c100[nbr/10]
-		if nbr % 10 > 0 {
-			str += "-" + c19[nbr % 10]
-		}
-	}
-	return str
-}
+// 	var str string
+// 	sep := " "
+// 	nbr := n % 100
+// 	n /= 100
+// 	if n > 0 {
+// 		str += c19[n] + sep + c100[100]
+// 		// if nbr > 0 {
+// 		// 	str += sep
+// 		// }
+// 	}
+// 	if nbr < 20 && nbr != 0 {
+// 		if n > 0 {
+// 			str += sep
+// 		}
+// 		str += c19[nbr]
+// 	// } else if nbr == 0 && n == 0 {
+// 	// 	str += c19[0]
+// 	} else {
+// 		if n > 0 && nbr % 10 > 0{
+// 			str += sep
+// 		}
+// 		str += c100[nbr/10]
+// 		if nbr % 10 > 0 {
+// 			str += "-" + c19[nbr % 10]
+// 		}
+// 	}
+// 	return str
+// }
 
-func capacity(i int) string {
-	switch i {
-	case 3:
-		return "billion"
-	case 2:
-		return "million"
-	case 1:
-		return "thousand"
-	default:
-		return ""
-	}
-}
+// func capacity(i int) string {
+// 	switch i {
+// 	case 3:
+// 		return "billion"
+// 	case 2:
+// 		return "million"
+// 	case 1:
+// 		return "thousand"
+// 	default:
+// 		return ""
+// 	}
+// }
 
-func Spell(n int64) string {
-	// return ""
-	outpStr := ""
-	minus := false
-	sep := " "
-	outpSlice := []string{}
-	if n < 0 {
-		n *= -1
-		minus = true
-	}
-	if n == 0 {
-		return "zero"
-	}
-	for ; n > 0; {
-		outpSlice = append(outpSlice, convert999(n % 1000))
-		n /= 1000
-	}
+// func Spell(n int64) string {
+// 	// return ""
+// 	outpStr := ""
+// 	minus := false
+// 	sep := " "
+// 	outpSlice := []string{}
+// 	if n < 0 {
+// 		n *= -1
+// 		minus = true
+// 	}
+// 	if n == 0 {
+// 		return "zero"
+// 	}
+// 	for ; n > 0; {
+// 		outpSlice = append(outpSlice, convert999(n % 1000))
+// 		n /= 1000
+// 	}
 
-	if minus {
-		outpStr += "minus "
-	}
-	for i := len(outpSlice) - 1; i >= 0; i-- {
-		if i != len(outpSlice) - 1 && outpSlice[i] != "" {
-			outpStr += sep
-		}
-		outpStr += outpSlice[i]
-		if len(outpSlice) > 1 && outpSlice[i] != "" && capacity(i) != "" {
-			outpStr += sep + capacity(i)
-		}
-	}
-	return(outpStr)
-}
+// 	if minus {
+// 		outpStr += "minus "
+// 	}
+// 	for i := len(outpSlice) - 1; i >= 0; i-- {
+// 		if i != len(outpSlice) - 1 && outpSlice[i] != "" {
+// 			outpStr += sep
+// 		}
+// 		outpStr += outpSlice[i]
+// 		if len(outpSlice) > 1 && outpSlice[i] != "" && capacity(i) != "" {
+// 			outpStr += sep + capacity(i)
+// 		}
+// 	}
+// 	return(outpStr)
+// }
 
-func main() {
-	fmt.Println(Spell(1234))
-}
+// func main() {
+// 	fmt.Println(Spell(1234))
+// }
 
 //--------------------------------------------
+
+
+
