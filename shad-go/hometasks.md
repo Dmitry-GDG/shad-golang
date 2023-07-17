@@ -46,7 +46,7 @@
       score: 100
     - task: ~~[speller](./speller/README.md)~~
       score: 100
-    - task: [forth](./forth/README.md)
+    - task: ~~[forth](./forth/README.md)~~
       score: 100
 
 - group:    Interfaces
