@@ -524,5 +524,725 @@ func main() {
     }
 }
 ````
+--------
+--------
+--------
+--------
+# Seminar
+## Benchmark
+Это тест производительности, который, в отличие от других языков, встроен в Go.
+````
+package bench
+import (
+	"fmt"
+	"testing"
+)
+func BenchmarkSample(b *testing.B) {
+	for i := 0; i < b.N; i++ { // код запускактся b.N раз, b.N сам подкручивает кол-во, пока не будет уверен
+		if x := fmt.Sprintf("%d", 42); x != "42" {
+			b.Fatalf("Unexpected string: %s", x)
+		}
+	}
+}
+
+// go test -v -bench=BenchmarkSample$ ./format_test.go
+// Output:
+// goos: linux
+// goarch: amd64
+// cpu: Intel(R) Core(TM) i7-4600U CPU @ 2.10GHz
+// BenchmarkSample
+// BenchmarkSample-4       23391235                50.95 ns/op // 4 - количество тредов, 23391235 - ск-ко раз бенчмарк был запущен, 50.95 - среднее время на операцию
+// PASS
+// ok      command-line-arguments  2.070s
+````
+Можно посчитать аллокации памяти:
+````
+package bench
+import (
+	"fmt"
+	"testing"
+)
+func BenchmarkSample(b *testing.B) {
+	b.ReportAllocs() // бенчмарк будет считать аллокации памяти
+	for i := 0; i < b.N; i++ {
+		if x := fmt.Sprintf("%d", 42); x != "42" {
+			b.Fatalf("Unexpected string: %s", x)
+		}
+	}
+}
+
+// go test -v -bench=BenchmarkSample$ ./format_test.go
+// goos: linux
+// goarch: amd64
+// cpu: Intel(R) Core(TM) i7-4600U CPU @ 2.10GHz
+// BenchmarkSample
+// BenchmarkSample-4       19637802                51.70 ns/op            2 B/op          1 allocs/op // 2 - ск-ко байт на операцию аллоцировал, 1 - одна аллокация
+// PASS
+// ok      command-line-arguments  1.081s
+````
+Бэнчмарку можно сказать, сколько раз запускаться: 
+````
+go test -v -bench=BenchmarkSample$ -count=10 ./format_test.go
+// Output:
+// goos: linux
+// goarch: amd64
+// cpu: Intel(R) Core(TM) i7-4600U CPU @ 2.10GHz
+// BenchmarkSample
+// BenchmarkSample-4       14619510                81.29 ns/op            2 B/op          1 allocs/op
+// BenchmarkSample-4       14755470                81.27 ns/op            2 B/op          1 allocs/op
+// BenchmarkSample-4       14663029                86.17 ns/op            2 B/op          1 allocs/op
+// BenchmarkSample-4       14530142                81.51 ns/op            2 B/op          1 allocs/op
+// BenchmarkSample-4       14650017                85.21 ns/op            2 B/op          1 allocs/op
+// BenchmarkSample-4       14820909                81.26 ns/op            2 B/op          1 allocs/op
+// BenchmarkSample-4       14768092                85.41 ns/op            2 B/op          1 allocs/op
+// BenchmarkSample-4       14783520                81.35 ns/op            2 B/op          1 allocs/op
+// BenchmarkSample-4       14640412                81.21 ns/op            2 B/op          1 allocs/op
+// BenchmarkSample-4       14648846                81.40 ns/op            2 B/op          1 allocs/op
+// PASS
+// ok      command-line-arguments  21.015s
+````
+Можно установить кол-во байт на одну операцию:
+````
+func BenchmarkSample(b *testing.B) {
+	b.ReportAllocs()
+	b.SetBytes(2) // установить кол-во байт на одну операцию
+	for i := 0; i < b.N; i++ { // код запускактся b.N раз, b.N сам подкручивает кол-во, пока не будет уверен
+		if x := fmt.Sprintf("%d", 42); x != "42" {
+			b.Fatalf("Unexpected string: %s", x)
+		}
+	}
+}
+// go test -v -bench=BenchmarkSample$ ./format_test.go
+// Output:
+// goos: linux
+// goarch: amd64
+// cpu: Intel(R) Core(TM) i7-4600U CPU @ 2.10GHz
+// BenchmarkSample
+// BenchmarkSample-4       14737189                82.25 ns/op       12.16 MB/s           2 B/op          1 allocs/op // добавилось: 12.16 MB/s - скорость, ск-ко выделяли в секунду (а не в операцию)
+// PASS
+// ok      command-line-arguments  2.300s
+````
+Простой пример (фибоначи от 10)
+````
+package bench
+import "testing"
+func Fib(n int) int {
+	if n < 2 {
+		return n
+	}
+	return Fib(n-1) + Fib(n-2)
+}
+func BenchmarkFib10(b *testing.B) {
+	for n := 0; n < b.N; n++ {
+		Fib(10)
+	}
+}
+
+// go test -v -bench=BenchmarkFib10$ ./fib_test.go
+// Output:
+// goos: linux
+// goarch: amd64
+// cpu: Intel(R) Core(TM) i7-4600U CPU @ 2.10GHz
+// BenchmarkFib10
+// BenchmarkFib10-4         3789340               302.3 ns/op
+// PASS
+// ok      command-line-arguments  1.469s
+````
+### Запуск бенчмарка с профайлером
+В Го есть встроенный профайлер. При запуске можно насобирать разных сэмплов и увидеть, гдк у нас затупы по разным ресурсам: по памяти, цпу, есть еще лог-профайлер...
+#### cpuprofile
+Посмотрим цпу-профайлер:
+````
+// go test -v -bench=BenchmarkFib10$ -cpuprofile=/tmp/cpu.out ./fib_test.go
+````
+В итоге бенчмарк соберёт данные и запишет их в бинарный файл. 
+````
+s -lh /tmp/cpu.out
+// -rw-rw-r-- 1 dmitry dmitry 1,4K июл 20 07:18 /tmp/cpu.out
+````
+Посмотрим на этот файл hexdump-ом: 
+````
+hexdump -C /tmp/cpu.out | less
+````
+Для чтеня этого файла есть спец. утилита pprof -> запускается интерактивная среда. Есть команда help
+````
+go tool pprof /tmp/cpu.out 
+
+// File: bench.test
+// Type: cpu
+// Time: Jul 20, 2023 at 7:18am (MSK)
+// Duration: 1.51s, Total samples = 1.39s (92.24%)
+// Entering interactive mode (type "help" for commands, "o" for options)
+// (pprof) help
+//   Commands:
+//     callgrind        Outputs a graph in callgrind format
+//     comments         Output all profile comments
+````
+Важные команды этой утилиты:
+- top - покажет комулитивные строки, отсортированные по сумме времён выполнения
+````
+(pprof) top 
+Showing nodes accounting for 1.39s, 100% of 1.39s total
+      flat  flat%   sum%        cum   cum%
+     1.38s 99.28% 99.28%      1.38s 99.28%  command-line-arguments.Fib
+     0.01s  0.72%   100%      1.39s   100%  command-line-arguments.BenchmarkFib10
+         0     0%   100%      1.39s   100%  testing.(*B).launch
+         0     0%   100%      1.39s   100%  testing.(*B).runN
+````
+- list "func name" // указать ей имя ф-ции
+
+Показывает время выполнения по строкам. Это важно, если мы ищем затупы по ЦПУ
+````
+(pprof) list Fib
+Total: 1.39s
+ROUTINE ======================== command-line-arguments.BenchmarkFib10 in /home/dmitry/project/yandex/shad-golang/02_24/fib_test.go
+      10ms      1.39s (flat, cum)   100% of Total
+         .          .      9:func BenchmarkFib10(b *testing.B) {
+         .          .     10:   for n := 0; n < b.N; n++ {
+      10ms      1.39s     11:           Fib(10)
+         .          .     12:   }
+         .          .     13:}
+         .          .     14:
+         .          .     15:// go test -v -bench=BenchmarkFib10$ ./fib_test.go
+         .          .     16:// go test -v -bench=BenchmarkFib10$ -cpuprofile=/tmp/cpu.out ./fib_test.go
+ROUTINE ======================== command-line-arguments.Fib in /home/dmitry/project/yandex/shad-golang/02_24/fib_test.go
+     1.38s      2.19s (flat, cum) 157.55% of Total
+     520ms      520ms      3:func Fib(n int) int {
+      70ms       70ms      4:   if n < 2 {
+     220ms      220ms      5:           return n
+         .          .      6:   }
+     570ms      1.38s      7:   return Fib(n-1) + Fib(n-2)
+         .          .      8:}
+         .          .      9:func BenchmarkFib10(b *testing.B) {
+         .          .     10:   for n := 0; n < b.N; n++ {
+         .          .     11:           Fib(10)
+         .          .     12:   }
+(pprof) 
+````
+- svg 
+
+Для этого необходимо установить пакет graphviz(sudo apt install graphviz) (https://graphviz.org/download/). 
+
+После выполнения - будет создан файл (profile001.svg) в той директории, в которой мы в терминале запустим следующую команду 
+````
+(pprof) svg
+Generating report in profile001.svg
+(pprof) 
+````
+У VSCode - известный баг, для открытия этого файла надо вызвать отдельный терминал
+
+Откроем этот файл (запустить команду в терминале, не VSCode):
+````
+dmitry@dmitry-UN62V:~/project/yandex/shad-golang/02_24$ xdg-open profile001.svg
+dmitry@dmitry-UN62V:~/project/yandex/shad-golang/02_24$ 
+
+````
+Будет нарисован вывод, аналогичный top-у, но в виде графа.
+
+![profile001.svg](./pics/profile001.svg)
+
+![profile001.svg](./pics/1.png)
+
+Здесь граф очень прочтой. Но иногда по графам что-то можно понять.
+
+- web (вместо svg)
+
+Эта команда создаст такой же граф в директории /tmp/ и откроет его в вашем браузере (мой браузер не смог открыть, почему-то)
+````
+(pprof) web
+Gtk-Message: 10:33:32.416: Not loading module "atk-bridge": The functionality is provided by GTK natively. Please try to not load it.
+Gtk-Message: 10:33:32.521: Failed to load module "canberra-gtk-module"
+Gtk-Message: 10:33:32.523: Failed to load module "canberra-gtk-module"
+(pprof) 
+````
+
+### memoryprofile
+Когда мы делали предыдущее ДЗ, мы оборачивали байтовый массив в стринг, то происходит копирование (реаллокация), и меморипрофайл это показал бы
+````
+string([]byre{})
+````
+*** (см файл to_json.test) ***
+
+Запись вывода фукции в файл:
+````
+go test -v -bench=BenchmarkToJSON$ ./tojson_test.go > /tmp/concat.txt
+// cat /tmp/concat.txt
+````
+У нас есть две реализации создания JSON: с помощью средств Marshal и собственная реализация (альтернативная реализация: мы вручную записали JSON через конкатенацию строк). Мы хотим написать бенчмарк и сравнить их
+````
+package bench
+import (
+	"testing"
+	"strconv"
+)
+type testStruct struct {
+	X int
+	Y string
+}
+// // альтернативная реализация: мы вручную записали JSON через конкатенацию строк
+func (t *testStruct) ToJSON() ([]byte,error) {
+	return []byte(`{"X": ` + strconv.Itoa(t.X) + `, "Y": ` + t.Y + `}`), nil
+}
+func BenchmarkToJSON(b *testing.B) {
+	tmp := &testStruct{X: 1, Y: "string"}
+	js, err := tmp.ToJSON()
+	if err != nil {
+		b.Fatal(err)
+	}
+	b.SetBytes(int64(len(js)))
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		if _, err := tmp.ToJSON(); err != nil {
+			b.Fatal(err)
+		}
+	}
+}
+
+// НЕ работает запись в файл в терминале VS Code!!!
+// go test -v -bench=BenchmarkToJSON$ ./tojson_test.go
+// Output:
+// goos: linux
+// goarch: amd64
+// cpu: Intel(R) Core(TM) i7-4600U CPU @ 2.10GHz
+// BenchmarkToJSON
+// BenchmarkToJSON-4       20851258                50.61 ns/op      414.94 MB/s
+// PASS
+// ok      command-line-arguments  1.117s
+````
+````
+package bench
+import (
+	"testing"
+	"encoding/json"
+)
+type testStruct struct {
+	X int
+	Y string
+}
+func (t *testStruct) ToJSON() ([]byte,error) {
+	return json.Marshal(t)
+}
+func BenchmarkToJSON(b *testing.B) {
+	tmp := &testStruct{X: 1, Y: "string"}
+	js, err := tmp.ToJSON()
+	if err != nil {
+		b.Fatal(err)
+	}
+	b.SetBytes(int64(len(js)))
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		if _, err := tmp.ToJSON(); err != nil {
+			b.Fatal(err)
+		}
+	}
+}
+
+// НЕ работает запись в файл в терминале VS Code!!!
+// go test -v -bench=BenchmarkToJSON$ ./tojson_test.go
+// Output:
+// goos: linux
+// goarch: amd64
+// cpu: Intel(R) Core(TM) i7-4600U CPU @ 2.10GHz
+// BenchmarkToJSON
+// BenchmarkToJSON-4        4472816               243.6 ns/op        82.10 MB/s
+// PASS
+// ok      command-line-arguments  1.369s
+````
+Стандартная библиотека использует Рефлект внутри. Рефлект по-умолчанию - очень долгий. Конкатенация - быстрая. Поэтому такие результаты получили.
+## Benchstat
+Как сравнивать программно бенчмарки? - для этого есть package Benchstat (https://pkg.go.dev/golang.org/x/perf/cmd/benchstat). Его же используют учителя ШАД при сравнении с авторским решением
+````
+go install golang.org/x/perf/cmd/...@latest
+$GOPATH/bin/benchstat --help
+$HOME/go/bin/benchstat --help
+benchstat
+
+````
+Как работает? Ей нужно указать два результата запуска бенчмарков:
+
+Для этого в предыдущем примере сохраним наши результаты в файлы соответственно
+````
+// НЕ работает запись в файл в терминале VS Code!!!, записывать в файлы из штатного Терминала!
+// go test -v -bench=BenchmarkToJSON$ -count=10 ./tojson_test.go > /tmp/concat.txt
+// go test -v -bench=BenchmarkToJSON$ -count=10 ./tojson_test.go > /tmp/json.txt
+````
+и запустим
+````
+benchstat /tmp/json.txt /tmp/concat.txt
+// /tmp/json.txt:4: missing iteration count
+// /tmp/concat.txt:4: missing iteration count
+// goos: linux
+// goarch: amd64
+// cpu: Intel(R) Core(TM) i7-4600U CPU @ 2.10GHz
+//          │ /tmp/json.txt │           /tmp/concat.txt           │
+//          │    sec/op     │   sec/op     vs base                │
+// ToJSON-4    251.85n ± 1%   50.73n ± 1%  -79.86% (p=0.000 n=10)
+
+//          │ /tmp/json.txt │            /tmp/concat.txt             │
+//          │      B/s      │      B/s       vs base                 │
+// ToJSON-4    75.74Mi ± 1%   394.73Mi ± 1%  +421.16% (p=0.000 n=10)
+````
+Смысл следующий: получили результаты -> сохранили в тмп и сравнили -> улучшили. И так по кругу, пока не достигнем удовлевтворительного результата
+
+интересный пример разобран в файле *** set_test.go *** :
+````
+package bench
+
+import (
+	"strconv"
+	"sync"
+	"testing"
+)
+
+type Set struct {
+	set map[interface{}]struct{}
+	mu sync.Mutex
+}
+
+func (s *Set) Add(x interface{}) {
+	s.mu.Lock()
+	s.set[x] = struct{}{}
+	s.mu.Unlock()
+}
+
+func (s *Set) Delete(x interface{}) {
+	s.mu.Lock()
+	delete(s.set, x)
+	s.mu.Unlock()
+}
+
+func BenchmarkSetDelete(b *testing.B) {
+	var testSet []string
+	for i := 0; i < 1024; i++ { // заполняем новый сет 1024 элементами
+		testSet = append(testSet, strconv.Itoa(i))
+	}
+
+	b.ResetTimer() // чтоб время создания сета не входило в бенчмарк
+
+	for i := 0; i < b.N; i++ { // в цикле добавляем до b.N и удаляем
+		b.StopTimer() // чтоб время считать отдельно для каждой итерации
+		set := Set{set: make(map[interface{}]struct{})} // создаём пустой мап
+		for _, elem := range testSet {
+			set.Add(elem)
+			// set.Add("1qc") // Ключ мб любого типа, обязательно сравниваемый
+			// set.Add(1)
+		}
+		b.StartTimer() // чтоб время считать отдельно для каждой итерации
+
+		for _, elem := range testSet {
+			set.Delete(elem)
+		}
+	}
+}
+
+// go test -v -count=10 -bench=BenchmarkSetDelete$ ./set_test.go
+````
+
+## Embed
+*** 1_template/main.go ***
+
+Python шаблонизатор Jinja - это расширенная формат-строка, в которой можно писать более сложные конструкции: можно к полям обращаться, итерироваться по массиву...
+
+В Go есть два аналога: пакеты "text/template" и "html/template". Например, необходимо писать разный текст в зависимости от внешних факторов
+
+Что происходит: в ф-ции main мы создали новый объект(Index), вызвали на нём метод Parse, который вернул переменную t. Вызывая на этой переменной метод Execute, в который передаём выходной файл(os.Stdout) и мэп с заменяемыми параметрами.
+````
+package main
+	
+import (
+	"log"
+	"os"
+	// "text/template"
+	"html/template"
+)
+
+const index = `<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<title>go:embed demo</title>
+</head>
+<body>
+<div>
+<h1>Hello, {{ .UserAgent }}! </h1>
+<p>If you see this, then go:embed worked!</p>
+</div>
+</body>
+</html>`
+
+func main() {
+	t, err := template.New("index").Parse(index) // из пакета html/template
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	err = t.Execute(os.Stdout, map[string]interface{}{
+		"UserAgent": "Mozilla/5.0",
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+// go run main.go 
+// Output:
+// <html lang="en">
+// <head>
+// <meta charset="UTF-8"/>
+// <title>go:embed demo</title>
+// </head>
+// <body>
+// <div>
+// <h1>Hello, Mozilla/5.0! </h1>
+// <p>If you see this, then go:embed worked!</p>
+// </div>
+// </body>
+// </html>
+````
+Помимо мапы сюда можно передать просто структуру, в которой определено поле UserAgent
+````
+package main
+	
+import (
+	"log"
+	"os"
+	"html/template"
+)
+
+const index = `<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<title>go:embed demo</title>
+</head>
+<body>
+<div>
+<h1>Hello, {{ .UserAgent }}! </h1>
+<p>If you see this, then go:embed worked!</p>
+</div>
+</body>
+</html>`
+
+func main() {
+	t, err := template.New("index").Parse(index) // из пакета html/template
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	testStruct := struct {
+		UserAgent string
+	}{
+		UserAgent: "Mozilla",
+	}
+	err = t.Execute(os.Stdout, &testStruct)
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+// go run main.go 
+// Output:
+// <html lang="en">
+// <head>
+// <meta charset="UTF-8"/>
+// <title>go:embed demo</title>
+// </head>
+// <body>
+// <div>
+// <h1>Hello, Mozilla! </h1>
+// <p>If you see this, then go:embed worked!</p>
+// </div>
+// </body>
+// </html>
+````
+*** 2_init/main.go ***
+
+Из предыдущего примера нам не нравится, что некий строковый литерал (const index) находится в коде. Мы хотим его вынести в отдельный файл. В предыдущих версиях Го (до версии 1.16): создавалась папка resources и в ней - файл index.gohtml с содержанием такой константы. В основном файле в ф-ции main мы создали глобальную переменную и использовали ф-цию init() (она выполняется до всего) - аналог Parse из предыдущего примера.
+````
+// resources/index.gohtml
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<title>go:embed demo</title>
+</head>
+<body>
+<div>
+<h1>Hello, {{ .UserAgent }}! </h1>
+<p>If you see this, then go:embed worked!</p>
+</div>
+</body>
+</html>
+
+// main.go
+package main
+import (
+	"log"
+	"os"
+	"html/template"
+)
+
+var indexTemplate *template.Template
+
+func init() {
+	indexTemplate = template.Must(template.ParseFiles("resources/index.gohtml"))
+}
+
+func main() {
+
+	err := indexTemplate.Execute(os.Stdout, map[string]interface{}{
+		"UserAgent": "Mozilla/5.0",
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+// go run main.go 
+// Output:
+// <html lang="en">
+// <head>
+// <meta charset="UTF-8"/>
+// <title>go:embed demo</title>
+// </head>
+// <body>
+// <div>
+// <h1>Hello, Mozilla/5.0! </h1>
+// <p>If you see this, then go:embed worked!</p>
+// </div>
+// </body>
+// </html>
+````
+*** 3_sample ***
+
+В Го 1.16 появился спосорб некоторый набор объектов вкомпилить в бинарник с помощью специальной директивы, которую понимает компилятор.
+
+Как это делается? Самый простой пример - заводим свой объект (обычно-строка или слайс байт) и над этим объектом пишем специальный комментарий с указанием пути к файлу //go:embed hello.txt. На момент компиляции наша строка уже будет инициализирована: в s будет содержимое hello.txt.  При этом для встраивания одного файла в строку (или срез байт) необходимо импортировать пакет следующим образом: import _ "embed"
+````
+//hello.txt
+Hello world
+
+//main.go
+package main
+
+import (
+	"fmt"
+	_ "embed"
+)
+
+//go:embed hello.txt
+var s string
+//var s []byte
+
+func main() {
+	fmt.Println(s)
+}
+````
+*** 4_fs ***
+
+Напишем файл-сервер, который будет наши template-файлы подгружать
+
+https://pkg.go.dev/embed#hdr-Directives
+
+Здесь используется более сложная конструкция - embed.FS, которая распарсит дерево, глоб-фильтры в директории. embed.FS реализует интерфейс файловой системы, она умеет открывать директорию, читать файлы и что-то ещё.
+
+К нам пришел пользователь с каким-то запросом, мы поискали его путь в мапе. Если его нашли - мы его распарсили в соответствующий темплейт и вызвали Execute
+````
+// resources/index.gohtml
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<title>go:embed demo</title>
+</head>
+<body>
+<div>
+<h1>Hello, {{ .UserAgent }}! </h1>
+<p>If you see this, then go:embed worked!</p>
+</div>
+</body>
+</html>
+
+// main.go
+package main
+
+import (
+	"log"
+	"embed"
+	"net/http"
+	"text/template"
+)
+
+var (
+	//go:embed resources
+	res embed.FS
+
+	pages = map[string]string{  // это маппинг из урла в темплейт
+		"/": "resources/index.gohtml",
+	}
+)
+
+func main() {
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) { // на путь "/" выполняет наш код хэндлера.
+		page, ok := pages[r.URL.Path] // она ищет в pages путь
+		if !ok { // если не находит - 404
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+
+		tpl, err := template.ParseFS(res, page) // если находит, то используем спец ф-цию, которая умеет работать с FS, ищет темплейт по пути "resources/index.gohtml" и его парсит в tpl
+		if err != nil {
+			log.Printf("page %v not found in pages cache...", r.RequestURI)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "text/html") // заполняем Content-Type
+		w.WriteHeader(http.StatusOK) // заполняем StatusOK
+		data := map[string]interface{}{ // создаём мапу
+			"UserAgent": r.UserAgent(),
+		}
+		if err := tpl.Execute(w, data); err != nil {  // выполняем tpl.Execute на нашей мапе
+			return
+		}
+	})
+
+	http.FileServer(http.FS(res))
+	log.Println("...server started...")
+
+	err := http.ListenAndServe(":8088", nil)
+	if err != nil {
+		// log.Fatal(err)
+	}
+}
+
+// go run main.go 
+// in browser: localhost:8088
+// in terminal: curl -i localhost:8088
+// Output:
+// HTTP/1.1 200 OK
+// Content-Type: text/html
+// Date: Thu, 20 Jul 2023 14:39:29 GMT
+// Content-Length: 196
+
+// <html lang="en">
+// <head>
+// <meta charset="UTF-8"/>
+// <title>go:embed demo</title>
+// </head>
+// <body>
+// <div>
+// <h1>Hello, curl/7.81.0! </h1>
+// <p>If you see this, then go:embed worked!</p>
+// </div>
+// </body>
+// </html>
+````
+
+### Алиасы на импорт
+Если необходимо импортировать два пакета с одинаковыми полями - придется написать алиас к одному из них:
+````
+import (
+	"html/template"
+	txttemplate "txt/template"
+)
+````
+и когда захочешь обращаться к "txt/template", то писать свой алиас
 
 

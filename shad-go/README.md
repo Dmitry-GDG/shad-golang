@@ -1,16 +1,7 @@
 # Курс по Го в ШАД
-https://gitlab.com/slon/shad-go
 
 ### Решенные задачи вычеркиваю в [hometasks.md](./hometasks.md)
 
-
-
-Для работы с кодом нужен go 1.18 или выше.
-
-```sh
-git clone https://gitlab.com/slon/shad-go.git
-cd shad-go
-```
 
 Проект можно открыть в любой go IDE с поддержкой модулей.
 
