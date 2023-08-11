@@ -590,7 +590,162 @@ func Reset(x *Buffer) {
 }
 ````
 Паника работает в одной горутине. Внутри этой горутины паника раскручивает стек. Она идет по всем ф-циям внутри нашего вызова и выполнять все defer-ы, которые были созданы. Мы хотим, чтобы defer-ы исполнились в случае паники. Деферы вызываются по правилам стека LIFO.
+## Отложенные функции (defer)
 
+В Go есть полезная конструкция defer, которая позволяет выполнять функции в фазе выхода из текущей функции. Например:
+````
+package main
+
+import (
+    "fmt"
+)
+
+func main() {
+    // функция выполнится в самом конце при выходе из main
+    defer fmt.Println("finish")
+
+    fmt.Println("start")
+}
+````
+Вывод:
+````
+start
+finish
+````
+Такие функции называются отложенными. Каждая такая функция добавляется в стек отложенных функций и будет выполнена в порядке LIFO (Last In First Out):
+````
+package main
+
+import (
+    "fmt"
+)
+
+func main() {
+    defer fmt.Println("3rd")
+    defer fmt.Println("2nd")
+
+    fmt.Println("1st")
+}
+````
+Вывод:
+````
+1st
+2nd
+3rd
+````
+Использование отложенных функций достаточно распространено. Например:
+- закрытие дескриптора файла после работы
+- возвращение соединения с базой данных в общий пул после чтения всех строк
+- закрытие TCP соединения после полного прочтения тела ответа
+
+Полезное
+- [The Go Programming Language Specification — Defer statements](https://golang.org/ref/spec#Defer_statements)
+
+Задание
+
+Реализуйте функцию ExecuteMergeDictsJob(job *MergeDictsJob) (*MergeDictsJob, error), которая выполняет джобу MergeDictsJob и возвращает ее. Алгоритм обработки джобы следующий:
+- перебрать по порядку все словари job.Dicts и записать каждое ключ-значение в результирующую мапу job.Merged
+- если в структуре job.Dicts меньше 2-х словарей, возвращается ошибка errNotEnoughDicts = errors.New("at least 2 dictionaries are required")
+- если в структуре job.Dicts встречается словарь в виде нулевого значения nil, то возвращается ошибка errNilDict = errors.New("nil dictionary")
+- независимо от успешного выполнения или ошибки в возвращаемой структуре MergeDictsJob поле IsFinished должно быть заполнено как true
+
+Пример работы:
+````
+ExecuteMergeDictsJob(&MergeDictsJob{}) // &MergeDictsJob{IsFinished: true}, "at least 2 dictionaries are required"
+ExecuteMergeDictsJob(&MergeDictsJob{Dicts: []map[string]string{{"a": "b"},nil}}) // &MergeDictsJob{IsFinished: true, Dicts: []map[string]string{{"a": "b"},nil}}, "nil dictionary"
+ExecuteMergeDictsJob(&MergeDictsJob{Dicts: []map[string]string{{"a": "b"},{"b": "c"}}}) // &MergeDictsJob{IsFinished: true, Dicts: []map[string]string{{"a": "b", "b": "c"}}}, nil
+````
+Решение учителя:
+````
+package solution
+
+import "errors"
+
+// MergeDictsJob is a job to merge dictionaries into a single dictionary.
+type MergeDictsJob struct {
+	Dicts      []map[string]string
+	Merged     map[string]string
+	IsFinished bool
+}
+
+// errors
+var (
+	errNotEnoughDicts = errors.New("at least 2 dictionaries are required")
+	errNilDict        = errors.New("nil dictionary")
+)
+
+// BEGIN
+
+func (j *MergeDictsJob) setFinished() {
+	j.IsFinished = true
+}
+
+// ExecuteMergeDictsJob executes the job: merges all dictionaries into a single one.
+// After the job is finished the Finished flag is set to true.
+func ExecuteMergeDictsJob(job *MergeDictsJob) (*MergeDictsJob, error) {
+	defer job.setFinished()
+
+	if len(job.Dicts) < 2 {
+		return job, errNotEnoughDicts
+	}
+
+	job.Merged = make(map[string]string)
+	for _, dict := range job.Dicts {
+		if dict == nil {
+			return job, errNilDict
+		}
+
+		for k, v := range dict {
+			job.Merged[k] = v
+		}
+	}
+
+	return job, nil
+}
+
+// END
+````
+Ваше решение:
+````
+package solution
+
+import "errors"
+
+// MergeDictsJob is a job to merge dictionaries into a single dictionary.
+type MergeDictsJob struct {
+	Dicts      []map[string]string
+	Merged     map[string]string
+	IsFinished bool
+}
+
+// errors
+var (
+	errNotEnoughDicts = errors.New("at least 2 dictionaries are required")
+	errNilDict        = errors.New("nil dictionary")
+)
+
+// BEGIN (write your solution here)
+func ExecuteMergeDictsJob(job *MergeDictsJob) (*MergeDictsJob, error) {
+	job.IsFinished = true
+	if len(job.Dicts) < 2 {
+		return job, errNotEnoughDicts
+	}
+	for _, dict := range job.Dicts {
+		if len(dict) == 0 {
+			return job, errNilDict 
+		}
+	}
+	job.Merged = make(map[string]string)
+	for _, dict := range job.Dicts {
+		for key, value := range dict {
+			job.Merged[key] = value
+		}
+	}
+	return job, nil
+}
+````
+
+## defer
 Дефёры обычно несложные функции. Обычно их назначение: закрыть файл, отпустить сокет, отпустить лог, послать в канал значение, закрыть канал.
 ````
 //defer
@@ -609,7 +764,7 @@ func CopyFile(dstName, srcName string) (written int64, err error) {
 }
 ````
 Казалось бы: зачем нам defer, если программа всё-равно умрёт? - Чтоб файл в любом случае закрылся и никуда не утёк. 
-
+## recover
 От паники можно восстановиться (recover). Для этого внутри defer-а надо написать ф-цию recover, которая имеет следующий смысл: она возвращает тот аргумент, который был ей передан, а если был штатный вызов defer-а (не из-за паники), то она возвращает nil. Ещё она прекращает панику.
 
 Функция должна вернуть некоторые переменные. При вызове программы эти переменные инициализируются нулями (например), на момент паники эти переменные уже имеют некоторые значения. В этом примере в случае паники мы выходим из ф-ции, но выходим без паники, возвращая переменные со значениями, которые у них были на момент пваники. Наша программа штатно продолжает работать, получив из ф-ции эти значения. (Это, например, можно применитьт в ситуации, когда работает сервер и приходят обработчики запросов. Какой-то хэндлер может не влиять на нашу работу, не стартует горутин, но постоянно паниковать. Мы можем вынести весь хэндлер в сорону, обернуть в свою ф-цию и написать там defer и рекаверить)
@@ -1949,4 +2104,463 @@ import (
 ````
 и когда захочешь обращаться к "txt/template", то писать свой алиас
 
+-----------------
+-----------------
+-----------------
+-----------------
+## Введение в конкурентность (Concurrency)
 
+Современные процессоры (CPU) имеют несколько ядер, и некоторые поддерживают гиперпоточность, поэтому они могут обрабатывать несколько инструкций одновременно. Чтобы полностью утилизировать современные CPU, нужно использовать конкурентное программирование.
+
+Конкурентные вычисления — это форма вычислений, когда несколько инструкций выполняются, пересекаясь, в течение одного временного периода.
+
+Например есть 2 инструкции, которые нужно выполнить: А и B. При выполнении инструкций конкурентно ядро процессора вычисляет инструкцию A, при ожидающей B. Когда первая инструкция A заканчивает активное вычисление, она ставится на паузу, и ядро переключается на вычисление инструкции B.
+
+Рассмотрим простой пример конкурентности в реальной жизни: HTTP запрос к стороннему сервису по сети:
+- вычисление А делает HTTP запрос
+- пока А ждет ответа, начинает выполняться вычисление B
+- когда ответ пришел, А возвращается в работу
+
+Если в процессоре присутствует более одного ядра, обработка происходит параллельно. Возвращаясь к примеру выше, инструкции A и B будут выполняться независимо в один момент времени.
+
+Конкурентные вычисления могут происходить в программе, компьютере или сети. В данном курсе рассматривается только уровень программ.
+
+Как это все относится к Go? Разберемся в следующем уроке.
+
+Полезное
+- [Concurrency vs Parallelism](https://devopedia.org/concurrency-vs-parallelism)
+
+Задание
+
+Написать конкурентный код самостоятельно в данном уроке не получится, поэтому давайте подготовимся к следующему уроку реализацией синхронного кода.
+
+Реализуйте функцию MaxSum(nums1, nums2 []int) []int, которая суммирует числа в каждом слайсе и возвращает слайс с наибольшей суммой. Если сумма одинаковая, то возвращается первый слайс.
+
+Пример работы:
+````
+MaxSum([]int{1, 2, 3}, []int{10, 20, 50}) // [10 20 50]
+
+MaxSum([]int{3, 2, 1}, []int{1, 2, 3}) // [3 2 1]
+````
+Решение учителя:
+````
+package solution
+
+// BEGIN
+
+// MaxSum gets sum of each nums slice and returns a slice with the max sum.
+// If the slices are the same then the first one will be returned.
+func MaxSum(nums1, nums2 []int) []int {
+	if sum(nums1) >= sum(nums2) {
+		return nums1
+	}
+
+	return nums2
+}
+
+func sum(nums []int) int {
+	s := 0
+	for _, n := range nums {
+		s += n
+	}
+
+	return s
+}
+
+// END
+````
+Ваше решение:
+````
+package solution
+
+// BEGIN (write your solution here)
+func SumElem(nums []int) int {
+	outp := 0
+	for _, n := range nums {
+		outp += n
+	}
+	return outp
+}
+
+func MaxSum(nums1, nums2 []int) []int {
+	if SumElem(nums1) >= SumElem(nums2) {
+		return nums1
+	}
+	return nums2
+}
+````
+## Горутины
+
+Вот и подошло время познакомиться с самой сильной стороной языка Go — горутинами. Горутины — это легковесные потоки, которые реализуют конкурентное программирование в Go. Их называют легковесными потоками, потому что они управляются рантаймом языка, а не операционной системой. Стоимость переключения контекста и расход памяти намного ниже, чем у потоков ОС. Следовательно, для Go — не проблема поддерживать одновременно десятки тысяч горутин.
+
+Запустить функцию в горутине — супер легко. Для этого достаточно написать слово go перед вызовом функции:
+````
+package main
+
+import (
+    "fmt"
+    "time"
+)
+
+func main() {
+    // выведет сообщение в горутине
+    go fmt.Println("Hello concurrent world")
+
+    // если не подождать, то программа закончится, не успев, вывести сообщение
+    time.Sleep(100 * time.Millisecond)
+}
+````
+При написании конкурентного кода возникают новые моменты, которые нужно учитывать: состояние гонки, блокировки, коммуникация между горутинами. Пример программы, которая работает не так, как ожидается:
+````
+package main
+
+import (
+    "fmt"
+    "time"
+)
+
+func main() {
+    for i := 0; i < 5; i++ {
+        go func() {
+            fmt.Println(i)
+        }()
+    }
+
+    time.Sleep(100 * time.Millisecond)
+}
+````
+Сперва может показаться, что должны вывестись числа от 0 до 4, но на самом деле вывод будет следующим:
+````
+5
+5
+5
+5
+5
+````
+Все потому что i передается в общем скоупе, следовательно, когда горутины будут выполняться, цикл уже закончится и i будет равно 5. В данном случае нужно передать копию i:
+````
+package main
+
+import (
+    "fmt"
+    "time"
+)
+
+func main() {
+    for i := 0; i < 5; i++ {
+        go func(i int) {
+            fmt.Println(i)
+        }(i)
+    }
+
+    time.Sleep(100 * time.Millisecond)
+}
+````
+Вывод:
+````
+0
+4
+3
+1
+2
+````
+Также можно заметить, что числа вывелись не в порядке вызова. Горутины выполняются независимо и не гарантируют порядка. При необходимости последовательность в выполнении придется реализовывать самостоятельно.
+
+Полезное
+- [Effective Go — Goroutines](https://golang.org/doc/effective_go#goroutines)
+
+Задание
+
+Реализуйте функцию MaxSum(nums1, nums2 []int) []int из прошлого задания, используя горутины для расчета каждой суммы слайса.
+Не забудьте использовать функцию time.Sleep(100 * time.Millisecond), чтобы сумма успела посчитаться. В настоящих приложениях используются специальные инструменты, чтобы дожидаться исполнения асинхронного кода, но для простоты здесь будет использоваться обычный сон.
+
+Решение учителя:
+````
+package solution
+
+import (
+	"time"
+)
+
+// BEGIN
+
+// MaxSum gets sum of each nums slice and returns a slice with the max sum.
+// If the slices are the same then the first one will be returned.
+func MaxSum(nums1, nums2 []int) []int {
+	s1, s2 := 0, 0
+
+	go sumParallel(nums1, &s1)
+	go sumParallel(nums2, &s2)
+
+	time.Sleep(100 * time.Millisecond)
+
+	if s1 >= s2 {
+		return nums1
+	}
+
+	return nums2
+}
+
+func sumParallel(nums []int, res *int) {
+	*res = sum(nums)
+}
+
+func sum(nums []int) int {
+	s := 0
+	for _, n := range nums {
+		s += n
+	}
+
+	return s
+}
+
+// END
+````
+Ваше решение:
+````
+package solution
+
+import (
+	"time"
+)
+
+// BEGIN (write your solution here)
+func SumElem(nums []int, sum *int) {
+	for _, n := range nums {
+		*sum += n
+	}
+}
+
+func MaxSum(nums1, nums2 []int) []int {
+	sliceSInts := [][]int{nums1, nums2}
+	sum := make([]int, 2, 2)
+	for i := 0; i < 2; i++ {
+		go SumElem(sliceSInts[i], &sum[i])
+	}
+	time.Sleep(100 * time.Millisecond)
+	if sum[0] >= sum[1] {
+		return nums1
+	}
+	return nums2
+}
+
+//func main() {
+//	fmt.Println(MaxSum([]int{1, 2, 3}, []int{10, 20, 50})) // [10 20 50]
+//	fmt.Println(MaxSum([]int{3, 2, 1}, []int{1, 2, 3})) // [3 2 1]
+//}
+````
+## Каналы
+
+В Go существует постулат: "Do not communicate by sharing memory; instead, share memory by communicating" (Не общайтесь разделением памяти. Разделяйте память через общение). Для безопасной коммуникации между горутинами используется специальный тип данных: chan (канал).
+
+Как слайсы и мапы, каналы инициализируются с помощью функции make:
+````
+numCh := make(chan int)
+````
+Чтение и запись в канал происходит через конструкцию <-. Стрелка ставится перед, если канал читается и после, если записывается:
+````
+numCh := make(chan int)
+
+numCh <- 10 // записали значение в канал
+
+num := <- numCh // прочитали значение из канала и записали в переменную "num"
+````
+Чтение из канала блокирует текущую горутину, пока не вернется значение:
+````
+package main
+
+import (
+    "fmt"
+)
+
+func main() {
+    numCh := make(chan int)
+
+    <-numCh // программа зависнет здесь и будет ошибка: fatal error: all goroutines are asleep - deadlock!
+
+    fmt.Println("program has ended") // эта строка никогда не выведется
+}
+````
+Запись в канал так же блокирует текущую горутину, пока кто-то не прочтет значение.
+
+Каналы также можно использовать для задачи из прошлого урока:
+````
+package main
+
+import (
+    "fmt"
+)
+
+func main() {
+    fmt.Println(maxSum([]int{1, 2, 3}, []int{10, 20, 50})) // [10 20 50]
+}
+
+// суммирует значения каждого слайса nums и возвращает тот, который имеет наибольшую сумму
+func maxSum(nums1, nums2 []int) []int {
+    // канал для результата первой суммы
+    s1Ch := make(chan int)
+    go sumParallel(nums1, s1Ch)
+
+    // канал для результата второй суммы
+    s2Ch := make(chan int)
+    go sumParallel(nums2, s2Ch)
+
+    // присваиваем результаты в переменные. Здесь программа будет заблокирована, пока не придут результаты из обоих каналов.
+    s1, s2 := <-s1Ch, <-s2Ch
+
+    if s1 > s2 {
+        return nums1
+    }
+
+    return nums2
+}
+
+func sumParallel(nums []int, resCh chan int) {
+    s := 0
+    for _, n := range nums {
+        s += n
+    }
+
+    // результат суммы передаем в канал
+    resCh <- s
+}
+````
+Иногда требуется запустить обработчика в отдельной горутине, который будет выполнять работу на протяжении всего цикла жизни программы. С помощью конструкции for range можно читать из канала до того момента, пока он не будет закрыт:
+````
+package main
+
+import (
+    "fmt"
+    "time"
+)
+
+func main() {
+    // создаем канал, в который будем отправлять сообщения
+    msgCh := make(chan string)
+
+    // вызываем функцию асинхронно в горутине
+    go printer(msgCh)
+
+    msgCh <- "hello"
+    msgCh <- "concurrent"
+    msgCh <- "world"
+
+    // закрываем канал
+    close(msgCh)
+
+    // и ждем, пока printer закончит работу
+    time.Sleep(100 * time.Millisecond)
+}
+
+func printer(msgCh chan string) {
+    // читаем из канала, пока он открыт
+    for msg := range msgCh {
+        fmt.Println(msg)
+    }
+
+    fmt.Println("printer has finished")
+}
+````
+Полезное
+- [Effective Go — Channels](https://golang.org/doc/effective_go#channels)
+
+Задание
+
+Реализуйте функцию-воркера SumWorker(numsCh chan []int, sumCh chan int), которая суммирует переданные числа из канала numsCh и передает результат в канал sumCh. Ожидается, что функция будет постоянно работать в параллельной горутине (это можно увидеть в тестах).
+````
+numsCh := make(chan []int)
+sumCh := make(chan int)
+
+go SumWorker(numsCh, sumCh)
+numsCh <- []int{10, 10, 10}
+
+res := <- sumCh // 30
+````
+Решение учителя:
+````
+package solution
+
+// BEGIN
+
+// SumWorker runs a worker that calculates a sum of nums from the numsCh and returns a result in the sumCh.
+func SumWorker(numsCh chan []int, sumCh chan int) {
+	for nums := range numsCh {
+		sumCh <- sum(nums)
+	}
+}
+
+func sum(nums []int) int {
+	s := 0
+	for _, n := range nums {
+		s += n
+	}
+
+	return s
+}
+
+// END
+````
+Ваше решение:
+````
+package solution
+
+// BEGIN (write your solution here)
+func SumWorker(numsCh chan []int, sumCh chan int) {
+	for nums := range numsCh {
+		outpSum := 0
+		for _, n := range nums {
+			outpSum += n
+		}
+		sumCh <- outpSum
+	}
+}
+
+// func main() {
+// 	numsCh := make(chan []int)
+// 	sumCh := make(chan int)
+
+// 	go SumWorker(numsCh, sumCh)
+// 	mass := []int{10, 10, 10}
+// 	numsCh <- mass
+// 	fmt.Printf("%v\t", mass)
+// 	res := <-sumCh // 30
+// 	fmt.Println(res)
+
+// 	mass = nil
+// 	numsCh <- mass
+// 	fmt.Printf("%v\t", mass)
+// 	res = <-sumCh // 0
+// 	fmt.Println(res)
+
+// 	mass = []int{}
+// 	numsCh <- mass
+// 	fmt.Printf("%v\t", mass)
+// 	res = <-sumCh // 0
+// 	fmt.Println(res)
+// 	//a.Equal(0, <-sumCh)
+
+// 	mass = []int{10, 10, 10}
+// 	numsCh <- mass
+// 	fmt.Printf("%v\t", mass)
+// 	res = <-sumCh // 30
+// 	fmt.Println(res)
+
+// 	mass = []int{500, 5, 10, 25}
+// 	numsCh <- mass
+// 	fmt.Printf("%v\t", mass)
+// 	res = <-sumCh // 540
+// 	fmt.Println(res)
+
+// 	close(numsCh)
+// 	close(sumCh)
+// 	time.Sleep(100 * time.Millisecond)
+// }
+````
+Вывод:
+````
+[10 10 10]	30
+[]	0
+[]	0
+[10 10 -10]	10
+[500 5 10 25]	540
+````
