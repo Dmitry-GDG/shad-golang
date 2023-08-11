@@ -41,6 +41,114 @@ func (list *IntList) Sum() int {
 	return list.Value + list.Tail.Sum()
 }
 ````
+## Пользовательские типы и методы
+
+В Go можно объявить алиас на существующий тип данных для выразительности и абстракции. Например, тип byte из модуля "строки" — это алиас uint8. Алиас объявляется через ключевое слово type:
+````
+type NumCount int
+
+func main() {
+    nc := NumCount(len([]int{1, 2, 3}))
+
+    fmt.Println(nc) // 3
+}
+````
+Алиас можно конвертировать в оригинальный тип и обратно:
+````
+type errorCode string
+
+func main() {
+    ec := errorCode("internal")
+
+    fmt.Println(ec) // internal
+
+    fmt.Println(string(ec)) // internal
+}
+````
+Также у алиасов могут быть методы. Объявление метода происходит так же, как и со структурами:
+````
+type counter int
+
+// передается указатель, чтобы можно было изменить состояние счетчика "c"
+func (c *counter) inc() {
+    *c++
+}
+
+func main() {
+    c := counter(0)
+    (&c).inc() // передается указатель на счетчик &c, так как функция "inc()" работает с указателями
+    (&c).inc()
+
+    fmt.Println(c) // 2
+}
+````
+Полезное
+- [The Go Programming Language Specification — Type Declarations](https://golang.org/ref/spec#Type_declarations)
+
+Задание
+
+Представим, что есть структура Person, содержащая возраст человека:
+````
+type Person struct {
+    Age uint8
+}
+````
+Реализуйте тип PersonList (слайс структур Person), с методом (pl PersonList) GetAgePopularity() map[uint8]int, который возвращает мапу, где ключ — возраст, а значение — кол-во таких возрастов:
+````
+pl := PersonList{
+  {Age: 18},
+  {Age: 44},
+  {Age: 18},
+}
+
+pl.GetAgePopularity() // map[18:2 44:1]
+````
+Решение учителя:
+````
+package solution
+
+// Person is a struct that keeps info about person's age
+type Person struct {
+	Age uint8
+}
+
+// BEGIN
+
+// PersonList is a list of persons.
+type PersonList []Person
+
+// GetAgePopularity calculates and returns popularity for each age in the person list.
+func (pl PersonList) GetAgePopularity() map[uint8]int {
+	popularity := make(map[uint8]int)
+	for _, p := range pl {
+		popularity[p.Age]++
+	}
+
+	return popularity
+}
+
+// END
+````
+Ваше решение:
+````
+package solution
+
+// Person is a struct that keeps info about person's age
+type Person struct {
+	Age uint8
+}
+
+// BEGIN (write your solution here)
+type PersonList []Person
+
+func (pl PersonList) GetAgePopularity() map[uint8]int {
+	outp := make(map[uint8]int)
+	for _, p := range pl {
+		outp[p.Age]++
+	}
+	return outp
+}
+````
 ## Embedding
 Методы взаимодействуют с эмбеддингом точно так же, как ембеддинг взаимодействует с полями. То есть: если у нас есть какая то структура (Point), мы можем её заимбеддить в другую структуру. Это значит: внутри новой структуры мы на отдельной строке должны указать имя типа, который эмбеддим, и не давать ему имени поля. 
 ````
@@ -581,9 +689,476 @@ fmt.Println(c())
 ------------
 ------------
 ------------
-# errors - ошибки
-(частично затронуты в лекции 2)
+# Ошибки
 
+Ошибки в Go — это особенность языка, которая позволяет работать с неожиданным поведением кода в явном виде:
+````
+import "errors"
+
+func validateName(name string) error {
+    if name == "" {
+        // errors.New создает новый объект ошибки
+        return errors.New("empty name")
+    }
+
+    if len([]rune(name)) > 50 {
+        return errors.New("a name cannot be more than 50 characters")
+    }
+
+    return nil
+}
+````
+Тип error является интерфейсом. Интерфейс — это отдельный тип данных в Go, представляющий набор методов. Любая структура реализует интерфейс неявно через структурную типизацию. Структурная типизация (в динамических языках это называют утиной типизацией) — это связывание типа с реализацией во время компиляции без явного указания связи в коде:
+````
+package main
+
+import (
+    "fmt"
+)
+
+// объявление интерфейса
+type Printer interface {
+    Print()
+}
+
+// нигде не указано, что User реализует интерфейс Printer
+type User struct {
+    email string
+}
+
+// структура User имеет метод Print, как в интерфейсе Printer. Следовательно, во время компиляции запишется связь между User и Printer
+func (u *User) Print() {
+    fmt.Println("My email is", u.email)
+}
+
+// функция принимает как аргумент интерфейс Printer
+func TestPrint(p Printer) {
+    p.Print()
+}
+
+func main() {
+    // в функцию TestPrint передается структура User, и так как она реализует интерфейс Printer, все работает без ошибок
+    TestPrint(&User{email: "test@test.com"})
+}
+````
+Интерфейс error содержит только один метод Error, который возвращает строковое представление ошибки:
+````
+// The error built-in interface type is the conventional interface for
+// representing an error condition, with the nil value representing no error.
+type error interface {
+    Error() string
+}
+````
+Следовательно, легко можно создавать свои реализации ошибок:
+````
+type TimeoutErr struct {
+    msg string
+}
+
+// структура TimeoutErr реализует интерфейс error и может быть использована как обычная ошибка
+func (e *TimeoutErr) Error() string {
+    return e.msg
+}
+
+Следует запомнить, что если функция возвращает ошибку, то она всегда возвращается последним аргументом:
+
+// функция возвращает несколько аргументов, и ошибка возвращается последней
+func DoHTTPCall(r Request) (Response, error) {
+    ...
+}
+````
+Нулевое значение для интерфейса — это пустое значение nil. Следовательно, когда код работает верно, возвращается nil вместо ошибки.
+
+Полезное
+- [The Go Programming Language Specification — Errors](https://golang.org/ref/spec#Errors)
+
+Задание
+
+Для выполнения этого задания потребуется функция json.Unmarshal, которая декодирует JSON байты в структуру:
+````
+package main
+
+import (
+    "encoding/json"
+    "fmt"
+)
+
+type HelloWorld struct {
+    Hello string
+}
+
+func main() {
+    hw := HelloWorld{}
+
+  // первым аргументом передается JSON-строка в виде слайса байт. Вторым аргументом указатель на структуру, в которую нужно декодировать результат.
+    err := json.Unmarshal([]byte("{\"hello\":\"world\"}"), &hw)
+
+    fmt.Printf("error: %s, struct: %+v\n", err, hw) // error: %!s(<nil>), struct: {Hello:world}
+}
+````
+В API методах часто используются запросы с телом в виде JSON. Такие тела нужно декодировать в структуры и валидировать. Хоть это и не лучшая практика делать функции, в которых происходит несколько действий, но для простоты примера реализуйте функцию DecodeAndValidateRequest(requestBody []byte) (CreateUserRequest, error), которая декодирует тело запроса из JSON в структуру CreateUserRequest и валидирует ее. Если приходит невалидный JSON или структура заполнена неверно, функция должна вернуть ошибку.
+Структура запроса:
+````
+type CreateUserRequest struct {
+    Email                string `json:"email"`
+    Password             string `json:"password"`
+    PasswordConfirmation string `json:"password_confirmation"`
+}
+````
+Список ошибок, которые нужно возвращать из функции:
+````
+// validation errors
+var (
+    errEmailRequired                = errors.New("email is required") // когда поле email не заполнено
+    errPasswordRequired             = errors.New("password is required") // когда поле password не заполнено
+    errPasswordConfirmationRequired = errors.New("password confirmation is required") // когда поле password_confirmation не заполнено
+    errPasswordDoesNotMatch         = errors.New("password does not match with the confirmation") // когда поля password и password_confirmation не совпадают
+)
+````
+Примеры работы функции DecodeAndValidateRequest:
+````
+DecodeAndValidateRequest([]byte("{\"email\":\"\",\"password\":\"test\",\"password_confirmation\":\"test\"}")) // CreateUserRequest{}, "email is required"
+DecodeAndValidateRequest([]byte("{\"email\":\"test\",\"password\":\"\",\"password_confirmation\":\"test\"}")) // CreateUserRequest{}, "password is required"
+DecodeAndValidateRequest([]byte("{\"email\":\"test\",\"password\":\"test\",\"password_confirmation\":\"\"}")) // CreateUserRequest{}, "password confirmation is required"
+DecodeAndValidateRequest([]byte("{\"email\":\"test\",\"password\":\"test\",\"password_confirmation\":\"test2\"}")) // CreateUserRequest{}, "password does not match with the confirmation"
+DecodeAndValidateRequest([]byte("{\"email\":\"email@test.com\",\"password\":\"passwordtest\",\"password_confirmation\":\"passwordtest\"}")) // CreateUserRequest{Email:"email@test.com", Password:"passwordtest", PasswordConfirmation:"passwordtest"}, nil
+````
+Решение учителя:
+````
+package solution
+
+import (
+	"encoding/json"
+	"errors"
+)
+
+// CreateUserRequest is a request to create a new user.
+type CreateUserRequest struct {
+	Email                string `json:"email"`
+	Password             string `json:"password"`
+	PasswordConfirmation string `json:"password_confirmation"`
+}
+
+// validation errors
+var (
+	errEmailRequired                = errors.New("email is required")
+	errPasswordRequired             = errors.New("password is required")
+	errPasswordConfirmationRequired = errors.New("password confirmation is required")
+	errPasswordDoesNotMatch         = errors.New("password does not match with the confirmation")
+)
+
+// BEGIN
+
+// DecodeAndValidateRequest decodes the JSON body and validates the user creation request.
+func DecodeAndValidateRequest(requestBody []byte) (CreateUserRequest, error) {
+	req := CreateUserRequest{}
+
+	err := json.Unmarshal(requestBody, &req)
+	if err != nil {
+		return CreateUserRequest{}, err
+	}
+
+	err = validateCreateUserRequest(req)
+	if err != nil {
+		return CreateUserRequest{}, err
+	}
+
+	return req, nil
+}
+
+func validateCreateUserRequest(req CreateUserRequest) error {
+	if req.Email == "" {
+		return errEmailRequired
+	}
+
+	if req.Password == "" {
+		return errPasswordRequired
+	}
+
+	if req.PasswordConfirmation == "" {
+		return errPasswordConfirmationRequired
+	}
+
+	if req.Password != req.PasswordConfirmation {
+		return errPasswordDoesNotMatch
+	}
+
+	return nil
+}
+````
+Ваше решение:
+````
+package solution
+
+import (
+	"encoding/json"
+	"errors"
+)
+
+// CreateUserRequest is a request to create a new user.
+type CreateUserRequest struct {
+	Email                string `json:"email"`
+	Password             string `json:"password"`
+	PasswordConfirmation string `json:"password_confirmation"`
+}
+
+// validation errors
+var (
+	errEmailRequired                = errors.New("email is required")
+	errPasswordRequired             = errors.New("password is required")
+	errPasswordConfirmationRequired = errors.New("password confirmation is required")
+	errPasswordDoesNotMatch         = errors.New("password does not match with the confirmation")
+)
+
+// BEGIN (write your solution here)
+func DecodeAndValidateRequest(requestBody []byte) (CreateUserRequest, error) {
+	rb := CreateUserRequest{}
+	err := json.Unmarshal(requestBody, &rb)
+	if err != nil {
+		return CreateUserRequest{}, err
+	}
+	if rb.Email == "" {
+		return CreateUserRequest{}, errEmailRequired
+	} else if rb.Password == "" {
+		return CreateUserRequest{}, errPasswordRequired
+	} else if rb.PasswordConfirmation == "" {
+		return CreateUserRequest{}, errPasswordConfirmationRequired
+	} else if rb.Password != rb.PasswordConfirmation {
+		return CreateUserRequest{}, errPasswordDoesNotMatch
+	}
+	return rb, nil
+}
+````
+## Обработка ошибок
+
+Возвращаемые ошибки принято проверять при каждом вызове:
+````
+import "log"
+
+response, err := DoHTTPCall()
+if err != nil {
+    log.Println(err)
+}
+
+// только после проверки на ошибку можно делать что-то с объектом response
+````
+При этом логика обработки отличается от места и типа ошибки. Ошибки можно оборачивать и прокидывать в функцию выше, логировать или делать любые фоллбек действия.
+
+Оборачивание ошибок — важная часть написания кода на Go. Это позволяет явно видеть трейс вызова и место возникновения ошибки. Для оборачивания используется функция fmt.Errorf:
+````
+package main
+
+import (
+    "errors"
+    "fmt"
+)
+
+// для простоты примера опускаем аргументы запроса и ответа
+func DoHTTPCall() error {
+    err := SendTCP()
+    if err != nil {
+        // оборачивается в виде "[название метода]: %w". %w — это плейсхолдер для ошибки
+        return fmt.Errorf("send tcp: %w", err)
+    }
+
+    return nil
+}
+
+var errTCPConnectionIssue = errors.New("TCP connect issue")
+
+func SendTCP() error {
+    return errTCPConnectionIssue
+}
+
+func main() {
+    fmt.Println(DoHTTPCall()) // send tcp: TCP connect issue
+}
+````
+В современном Go существуют функции для проверки типов конкретных ошибок. Например, ошибку из примера выше можно проверить с помощью функции errors.Is. В данном случае errTCPConnectionIssue обернута другой ошибкой, но функция errors.Is найдет ее при проверке:
+````
+err := DoHTTPCall()
+if err != nil {
+    if errors.Is(err, errTCPConnectionIssue) {
+        // в случае ошибки соединения ждем 1 секунду и пытаемся сделать запрос снова
+        time.Sleep(1 * time.Second)
+        return DoHTTPCall()
+    }
+
+    // обработка неизвестной ошибки
+    log.Println("unknown error on HTTP call", err)
+}
+````
+errors.Is подходит для проверки статичных ошибок, хранящихся в переменных. Иногда нужно проверить не конкретную ошибку, а целый тип. Для этого используется функция errors.As:
+````
+package main
+
+import (
+    "errors"
+    "log"
+    "time"
+)
+
+// ошибка подключения к базе данных
+type ConnectionErr struct{}
+
+func (e ConnectionErr) Error() string {
+    return "connection err"
+}
+
+func main() {
+    // цикл подключения к БД. Пытаемся 3 раза, если не удалось подсоединиться с первого раза.
+    tries := 0
+    for {
+        if tries > 2 {
+            log.Println("Can't connect to DB")
+            break
+        }
+
+        err := connectDB()
+        if err != nil {
+            // если ошибка подключения, то ждем 1 секунду и пытаемся снова
+            if errors.As(err, &ConnectionErr{}) {
+                log.Println("Connection error. Trying to reconnect...")
+                time.Sleep(1 * time.Second)
+                tries++
+                continue
+            }
+
+            // в противном случае ошибка критичная, логируем и выходим из цикла
+            log.Println("connect DB critical error", err)
+        }
+
+        break
+    }
+}
+
+// для простоты функция всегда возвращает ошибку подключения
+func connectDB() error {
+    return ConnectionErr{}
+}
+````
+Вывод программы спустя 3 секунды:
+````
+Connection error. Trying to reconnect...
+Connection error. Trying to reconnect...
+Connection error. Trying to reconnect...
+Can't connect to DB
+````
+Задание
+
+Какая-то функция возвращает критичные и некритичные ошибки:
+````
+// некритичная ошибка валидации
+type nonCriticalError struct{}
+
+func (e nonCriticalError) Error() string {
+    return "validation error"
+}
+
+// критичные ошибки
+var (
+    errBadConnection = errors.New("bad connection")
+    errBadRequest    = errors.New("bad request")
+)
+````
+Реализуйте функцию GetErrorMsg(err error) string, которая возвращает текст ошибки, если она критичная. В случае неизвестной ошибки возвращается строка unknown error:
+````
+GetErrorMsg(errors.New("bad connection")) // "bad connection"
+GetErrorMsg(errors.New("bad request")) // "bad request"
+GetErrorMsg(nonCriticalError{}) // ""
+GetErrorMsg(errors.New("random error")) // "unknown error"
+````
+Решение учителя:
+````
+package solution
+
+import (
+	"errors"
+)
+
+type nonCriticalError struct{}
+
+func (e nonCriticalError) Error() string {
+	return "validation error"
+}
+
+var (
+	errBadConnection = errors.New("bad connection")
+	errBadRequest    = errors.New("bad request")
+)
+
+const unknownErrorMsg = "unknown error"
+
+// BEGIN
+
+var criticalErrs = []error{errBadRequest, errBadConnection}
+
+// GetErrorMsg returns the err message if the error is critical. Otherwise it returns an empty string.
+func GetErrorMsg(err error) string {
+	for _, crErr := range criticalErrs {
+		if errors.Is(err, crErr) {
+			return crErr.Error()
+		}
+	}
+
+	if errors.As(err, &nonCriticalError{}) {
+		return ""
+	}
+
+	return unknownErrorMsg
+}
+
+// END
+````
+Ваше решение:
+````
+package solution
+
+import (
+	"errors"
+	//"fmt"
+)
+
+type nonCriticalError struct{}
+
+func (e nonCriticalError) Error() string {
+	return "validation error"
+}
+
+var (
+	errBadConnection = errors.New("bad connection")
+	errBadRequest    = errors.New("bad request")
+)
+
+const unknownErrorMsg = "unknown error"
+
+// BEGIN (write your solution here)
+func GetErrorMsg(err error) string {
+	//fmt.Println(err, errBadConnection)
+	if errors.As(err, &nonCriticalError{}) {
+		return ""
+	} else if errors.Is(err, errBadConnection) {
+		// return fmt.Sprintf("%v", errBadConnection)
+		return errBadConnection.Error()
+	} else if errors.Is(err, errBadRequest) {
+		//return fmt.Sprintf("%v", errBadRequest)
+		return errBadRequest.Error()
+	} else {
+		return string(unknownErrorMsg)
+	}
+}
+````
+
+## errors - ошибки
+(частично затронуты в лекции 2)
+если функция возвращает ошибку, то она всегда возвращает её последним аргументом. Текст ошибки должен быть в lowercase. 
+Ошибку надо пояснить в соответствии с этапом программы:
+````
+doc, err := html.Parse(resp.Body)
+if err != nil {
+	return nil, fmt.Errorf("parsing %s as HTML: %w", url, err)
+}
+````
 В языке Go есть встроенный интерфейс под названием error. Его определение:
 ````
 type error interface {

@@ -1489,6 +1489,168 @@ func main() {
 }
 ````
 Структуру можно использовать как ключ в map
+#### Методы структур
+
+В Go нет классов, но существуют структуры с методами. Метод — это функция с дополнительным аргументом, который указывается в скобках между func и названием функции:
+````
+package main
+
+import (
+    "fmt"
+)
+
+type Dog struct{}
+
+// сначала объявляется дополнительный аргумент "(d Dog)", а следом идет обычное описание функции
+func (d Dog) Bark() {
+    fmt.Println("woof!")
+}
+
+func main() {
+    d := Dog{}
+    d.Bark() // woof!
+}
+````
+В примере выше структура Dog передается по значению, то есть копируется. Если изменятся любые свойства внутри метода Bark, они останутся неизменными в исходной структуре:
+````
+package main
+
+import (
+    "fmt"
+)
+
+type Dog struct {
+    IsBarked bool
+}
+
+func (d Dog) Bark() {
+    fmt.Println("woof!")
+    d.IsBarked = true
+}
+
+func main() {
+    d := Dog{}
+    d.Bark() // woof!
+
+    fmt.Println(d.IsBarked) // false
+}
+````
+Если есть необходимость в изменении состояния, структура должна передаваться указателем:
+````
+package main
+
+import (
+    "fmt"
+)
+
+type Dog struct {
+    IsBarked bool
+}
+
+func (d *Dog) Bark() {
+    fmt.Println("woof!")
+    d.IsBarked = true
+}
+
+func main() {
+    d := &Dog{}
+    d.Bark() // woof!
+
+    fmt.Println(d.IsBarked) // true
+}
+````
+Полезное
+- [The Go Programming Language Specification — Method Declarations](https://golang.org/ref/spec#Method_declarations)
+
+Задание
+
+Реализуйте методы структуры Counter, представляющую собой счётчик, хранящий неотрицательное целочисленное значение и позволяющий это значение изменять:
+
+- метод Inc(delta int) должен увеличивать текущее значение на delta единиц (на 1 по умолчанию),
+- метод Dec(delta int) должен уменьшать текущее значение на delta единиц.
+````
+c := Counter{}
+c.Inc(0)
+c.Inc(0)
+c.Inc(40)
+c.Value // 42
+
+c.Dec(0)
+c.Dec(30)
+c.Value // 11
+
+c.Dec(100)
+c.Value // 0
+````
+Решение учителя:
+````
+package solution
+
+type Counter struct {
+	Value int
+}
+
+func Max(x, y int) int {
+	if x < y {
+		return y
+	}
+	return x
+}
+
+// BEGIN
+func (c *Counter) Inc(delta int) {
+	if delta == 0 {
+		delta = 1
+	}
+	c.Value = Max(c.Value+delta, 0)
+}
+
+func (c *Counter) Dec(delta int) {
+	if delta == 0 {
+		delta = 1
+	}
+	c.Inc(-delta)
+}
+
+// END
+````
+Ваше решение:
+````
+package solution
+
+type Counter struct {
+	Value int
+}
+
+func Max(x, y int) int {
+	if x < y {
+		return y
+	}
+	return x
+}
+
+// BEGIN (write your solution here)
+func (c *Counter)Inc(delta int) {
+	if delta == 0 {
+		c.Value++
+	} else {
+		c.Value += delta
+	}
+	if c.Value < 0 {
+		c.Value = 0
+	}
+}
+func (c *Counter)Dec(delta int) {
+	if delta == 0 {
+		c.Value--
+	} else {
+		c.Value -= delta
+	}
+	if c.Value < 0 {
+		c.Value = 0
+	}
+}
+````
 #### struct embedding:
 ````
 type Point struct {
@@ -1623,5 +1785,282 @@ func PrintAll(w io.writer, root *Node) {
 		}
 	}
 	visit(root)
+}
+````
+### Вариативные функции
+
+Последний аргумент функции может быть вариативным. Функция может иметь максимум один вариативный аргумент и этот аргумент всегда слайс. Чтобы обозначить аргумент вариативным, нужно поставить три точки ... перед его типом:
+````
+package main
+
+import (
+    "fmt"
+)
+
+func main() {
+    // кол-во аргументов может быть любым
+    PrintNums(1, 2, 3)
+}
+
+
+func PrintNums(nums ...int) {
+    for _, n := range nums {
+        fmt.Println(n)
+    }
+}
+````
+Также тремя точками можно разбить слайс на элементы при передаче в вариативную функцию. Например, встроенный метод append(slice []Type, elems ...Type) []Type, который добавляет последний элемент в слайс, принимает вариативный аргумент elems ...Type. Чтобы добавить один слайс в конец другого, нужно разбить второй слайс на элементы путем добавления трех точек ... после переменной:
+````
+nums1 := []int{1,2,3,4,5}
+
+nums2 := []int{6,7,8,9,10}
+
+res := append(nums1, nums2...) // [1 2 3 4 5 6 7 8 9 10]
+````
+Задание
+
+Реализуйте функцию MergeNumberLists(numberLists ...[]int) []int, которая принимает вариативный список слайсов чисел и объединяет их в 1, сохраняя последовательность:
+````
+MergeNumberLists([]int{1, 2}, []int{3}, []int{4}) // [1, 2, 3, 4]
+````
+Решение учителя:
+````
+package solution
+
+// BEGIN
+
+// MergeNumberLists merges all the number lists into the single one and returns it.
+// It preserves the order of the number list items.
+func MergeNumberLists(numberLists ...[]int) []int {
+	mergedCap := 0
+	for i := 0; i < len(numberLists); i++ {
+		mergedCap += len(numberLists[i])
+	}
+
+	merged := make([]int, 0, mergedCap)
+	for _, nl := range numberLists {
+		merged = append(merged, nl...)
+	}
+
+	return merged
+}
+
+// END
+````
+Ваше решение:
+````
+package solution
+
+// BEGIN (write your solution here)
+func MergeNumberLists(numberLists ...[]int) []int {
+	outp := []int{}
+	for _, n := range numberLists {
+		outp = append(outp, n...)
+	}
+	return outp
+}
+````
+### Аргументы с указателем
+
+Указатели — очень обширная и непростая тема, выходящая за рамки данного курса. В этом уроке будут рассмотренны только основы передачи указателей на аргументы в функции:
+````
+package main
+
+import (
+    "fmt"
+)
+
+type User struct {
+    email    string
+    password string
+}
+
+// при объявлении указываем,
+// что переменная должна быть указателем.
+// Для этого ставим звездочку * перед типом данных
+func fillUserData(u *User, email string, pass string) {
+    u.email = email
+    u.password = pass
+}
+
+func main() {
+    u := User{}
+
+    // передаем указатель с помощью амперсанда
+    // & перед переменной
+    fillUserData(&u, "test@test.com", "qwerty")
+
+    fmt.Printf("points on func call %+v\n", u)
+    // points on func call {email:test@test.com password:qwerty}
+
+    // сразу инициализируем переменную с указателем
+    up := &User{}
+
+    fillUserData(up, "test@test.com", "qwerty")
+
+    fmt.Printf("points on init %+v\n", up)
+    // points on init {email:test@test.com password:qwerty}
+}
+````
+Мапы по умолчанию передаются с указателем:
+````
+package main
+
+import (
+    "fmt"
+)
+
+func main() {
+    m := map[string]int{}
+
+    fillMap(m)
+
+    fmt.Println(m) // map[random:1]
+}
+
+func fillMap(m map[string]int) {
+    m["random"] = 1
+}
+````
+Разработчики, пришедшие из других языков, часто используют фразы "передача по ссылке" или "ссылка на переменную". Строго говоря, в Go нет ссылок, только указатели:
+````
+package main
+
+import "fmt"
+
+func main() {
+    a := 1
+    b := &a
+    c := &b
+
+    fmt.Printf("%p %p %p\n", &a, &b, &c)
+    // 0xc000018030 0xc00000e028 0xc00000e030
+}
+````
+В этом примере b и c содержат одинаковые значения — адрес переменной a, однако b и c хранятся в разных адресах. Из-за этого обновление переменной b не изменит c. Поэтому если кто-то говорит про ссылки в Go, он имеет в виду указатели.
+
+Полезное
+- [The Go Programming Language Specification — Pointer types](https://golang.org/ref/spec#Pointer_types)
+- [Указатели в Go](https://gobyexample.com/pointers)
+- [Еще об указателях](https://www.digitalocean.com/community/conceptual-articles/understanding-pointers-in-go)
+
+Задание
+
+Реализуйте функцию CopyParent(p *Parent) Parent, которая создает копию структуры Parent и возвращает ее:
+````
+type Parent struct {
+    Name     string
+    Children []Child
+}
+
+type Child struct {
+    Name string
+    Age  int
+}
+
+cp := CopyParent(nil) // Parent{}
+
+p := &Parent{
+   Name: "Harry",
+   Children: []Child{
+       {
+           Name: "Andy",
+           Age:  18,
+       },
+   },
+}
+cp := CopyParent(p)
+
+// при мутациях в копии "cp"
+// изначальная структура "p" не изменяется
+cp.Children[0] = Child{}
+fmt.Println(p.Children) // [{Andy 18}]
+````
+Решение учителя:
+````
+package solution
+
+// Parent is a parent struct.
+type Parent struct {
+	Name     string
+	Children []Child
+}
+
+// Child is a child struct.
+type Child struct {
+	Name string
+	Age  int
+}
+
+// BEGIN
+
+// CopyParent makes a copy of the Parent struct and returns it.
+func CopyParent(p *Parent) Parent {
+	if p == nil {
+		return Parent{}
+	}
+
+	cp := *p
+
+	cp.Children = make([]Child, len(p.Children))
+	copy(cp.Children, p.Children)
+
+	return cp
+}
+
+// END
+````
+Ваше решение:
+````
+package solution
+
+// Parent is a parent struct.
+type Parent struct {
+	Name     string
+	Children []Child
+}
+
+// Child is a child struct.
+type Child struct {
+	Name string
+	Age  int
+}
+
+// BEGIN (write your solution here)
+func CopyParent(p *Parent) Parent {
+	outp := Parent{}
+	if p != nil {
+		outp.Name = p.Name
+		outp.Children = make([]Child, len(p.Children), len(p.Children))
+		for i := 0; i < len(p.Children); i++ {
+			outp.Children[i].Name = p.Children[i].Name
+			outp.Children[i].Age = p.Children[i].Age
+		}
+	}
+	return outp
+}
+
+func main() {
+	p := Parent{
+		Name: "Dima",
+		Children: []Child{
+			{
+				Name: "Vlad",
+				Age:  27,
+			},
+			{
+				Name: "Vit",
+				Age:  25,
+			},
+		},
+	}
+	fmt.Println(p)
+	c := CopyParent(&p)
+	fmt.Println(c)
+	c.Children[0].Name = "VVVlad"
+	fmt.Println(c)
+	fmt.Println(p)
+	cp := CopyParent(nil)
+	fmt.Println(cp)
 }
 ````
